@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Rettet: cache-filen for konto-data blev læst og skrevet synkront direkte i
+  event loopet, hvilket udløste Home Assistants "Detected blocking call"
+  advarsel ved opsætning/opdatering. Al fil-I/O køres nu i en executor-tråd.
+
 ## 0.2.0
 
 - Ny "Clean all rooms"-knap pr. støvsuger.

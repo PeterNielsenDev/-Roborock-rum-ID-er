@@ -88,7 +88,7 @@ class RoborockRoomsCoordinator(DataUpdateCoordinator[dict[str, RoborockDeviceRoo
             ir.async_delete_issue(self.hass, DOMAIN, issue_id)
 
     async def _async_update_data(self) -> dict[str, RoborockDeviceRooms]:
-        cache = SafeFileCache(self._cache_path)
+        cache = SafeFileCache(self.hass, self._cache_path)
         user_params = UserParams(username=self.email, user_data=self.user_data)
         results: dict[str, RoborockDeviceRooms] = {}
         manager = None
