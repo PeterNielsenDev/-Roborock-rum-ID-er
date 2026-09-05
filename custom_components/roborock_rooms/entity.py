@@ -1,4 +1,4 @@
-"""Shared base entity for Roborock Rooms."""
+"""Shared base entities for Roborock Rooms."""
 
 from __future__ import annotations
 
@@ -9,10 +9,35 @@ from .const import DOMAIN
 from .coordinator import RoborockRoomsCoordinator
 
 
-class RoborockRoomEntity(CoordinatorEntity[RoborockRoomsCoordinator]):
-    """Base entity representing a single room/segment on a vacuum's map."""
+class RoborockDeviceEntity(CoordinatorEntity[RoborockRoomsCoordinator]):
+    """Base entity representing a single Roborock vacuum on the account."""
 
     _attr_has_entity_name = True
+
+    def __init__(self, coordinator: RoborockRoomsCoordinator, duid: str) -> None:
+        super().__init__(coordinator)
+        self._duid = duid
+
+    @property
+    def _device(self):
+        return self.coordinator.data.get(self._duid)
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._device is not None
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        device = self._device
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._duid)},
+            name=device.name if device else self._duid,
+            manufacturer="Roborock",
+        )
+
+
+class RoborockRoomEntity(RoborockDeviceEntity):
+    """Base entity representing a single room/segment on a vacuum's map."""
 
     def __init__(
         self,
@@ -20,13 +45,8 @@ class RoborockRoomEntity(CoordinatorEntity[RoborockRoomsCoordinator]):
         duid: str,
         segment_id: int,
     ) -> None:
-        super().__init__(coordinator)
-        self._duid = duid
+        super().__init__(coordinator, duid)
         self._segment_id = segment_id
-
-    @property
-    def _device(self):
-        return self.coordinator.data.get(self._duid)
 
     @property
     def _room(self):
@@ -38,12 +58,3 @@ class RoborockRoomEntity(CoordinatorEntity[RoborockRoomsCoordinator]):
     @property
     def available(self) -> bool:
         return super().available and self._room is not None
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        device = self._device
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._duid)},
-            name=device.name if device else self._duid,
-            manufacturer="Roborock",
-        )

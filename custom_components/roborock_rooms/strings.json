@@ -15,13 +15,45 @@
         "data": {
           "code": "Code"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate Roborock Rooms",
+        "description": "Your Roborock login for {email} has expired or was rejected. Enter your password, or leave it empty to receive a one-time code by email instead.",
+        "data": {
+          "password": "Password (optional)"
+        }
+      },
+      "reauth_code": {
+        "title": "Enter login code",
+        "description": "Enter the one-time code emailed to {email}.",
+        "data": {
+          "code": "Code"
+        }
       }
     },
     "error": {
       "invalid_auth": "Login failed. Check the email/password or code and try again."
     },
     "abort": {
-      "already_configured": "This Roborock account is already configured."
+      "already_configured": "This Roborock account is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Roborock Rooms options",
+        "description": "How often to refresh the room/segment list from the account.",
+        "data": {
+          "scan_interval_minutes": "Polling interval (minutes)"
+        }
+      }
+    }
+  },
+  "issues": {
+    "discovery_failed": {
+      "title": "Could not fetch rooms for {device}",
+      "description": "Room/segment discovery has repeatedly failed for {device}: {error}. Check that the vacuum is online and not currently cleaning."
     }
   }
 }

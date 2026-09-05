@@ -9,7 +9,9 @@ For hver Roborock-støvsuger på kontoen oprettes:
 - **En sensor pr. rum**, hvis state er rummets segment-ID (det tal, Roborocks cloud-API
   bruger til at identificere rummet), fx `sensor.stuen_koekken` → state `14`.
 - **En knap pr. rum** ("Clean <rum>"), der starter en rengøring af netop det rum.
-- En service, **`roborock_rooms.clean_rooms`**, til at rengøre flere rum på én gang.
+- **En "Clean all rooms"-knap** pr. støvsuger, der rengør alle kendte rum på kortet.
+- En service, **`roborock_rooms.clean_rooms`**, til at rengøre flere rum på én gang – med en
+  device-vælger, så du slipper for selv at slå enhedens ID op.
 
 ## Installation
 
@@ -36,18 +38,34 @@ Under opsætningen bliver du bedt om din Roborock-kontos email. Du kan enten:
 
 Login gemmes i Home Assistants config entry og bruges automatisk fremover.
 
+Udløber eller afvises loginnet på et tidspunkt (fx opdateret adgangskode hos Roborock),
+beder Home Assistant automatisk om at logge ind igen via en "Genautentificer"-notifikation
+under integrationen – på samme måde som det oprindelige login.
+
 ## Brug af `clean_rooms`-servicen
 
 ```yaml
 service: roborock_rooms.clean_rooms
 data:
-  duid: "abc123..."        # se attributten "duid" på en af rum-sensorerne
+  device_id: "abc123..."   # vælges i en dropdown i UI'et - din Roborock-støvsuger
   segments: [2, 5]         # segment-ID'erne for de rum, der skal rengøres
   repeat: 1                # valgfri, 1-3
 ```
 
-`duid` og segment-ID'erne kan aflæses direkte fra rum-sensorernes state og attributter i
+Segment-ID'erne kan aflæses direkte fra rum-sensorernes state og attributter i
 **Udviklerværktøjer → Tilstande**.
+
+## Indstillinger
+
+Under integrationens kort i **Indstillinger → Enheder og tjenester** kan du klikke
+**Konfigurer** for at ændre, hvor ofte rum-/segment-listen opdateres (standard 30 minutter).
+
+## Fejlsøgning
+
+- Har en støvsuger gentagne gange ikke kunnet hente sine rum, oprettes en reparations-
+  advarsel under **Indstillinger → Systemer → Reparationer**.
+- Du kan downloade diagnosticeringsdata for integrationen (kontooplysninger og token er
+  automatisk maskeret) via de tre prikker på integrationens kort → **Download diagnostics**.
 
 ## Begrænsninger
 

@@ -15,8 +15,9 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_EMAIL, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 from roborock.data import UserData
 from roborock.devices.device_manager import UserParams, create_device_manager
 from roborock.exceptions import RoborockException
@@ -24,11 +25,13 @@ from roborock.roborock_typing import RoborockCommand
 
 from .cache import SafeFileCache
 from .const import (
-    ATTR_DUID,
+    ATTR_DEVICE_ID,
     ATTR_REPEAT,
     ATTR_SEGMENTS,
+    CONF_SCAN_INTERVAL_MINUTES,
     CONF_USER_DATA,
     DATA_COORDINATORS,
+    DEFAULT_SCAN_INTERVAL_MINUTES,
     DOMAIN,
     SERVICE_CLEAN_ROOMS,
 )
@@ -40,7 +43,7 @@ PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BUTTON]
 
 CLEAN_ROOMS_SCHEMA = vol.Schema(
     {
-        vol.Required(ATTR_DUID): cv.string,
+        vol.Required(ATTR_DEVICE_ID): cv.string,
         vol.Required(ATTR_SEGMENTS): vol.All(cv.ensure_list, [vol.Coerce(int)]),
         vol.Optional(ATTR_REPEAT, default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=3)),
     }
@@ -55,8 +58,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Roborock Rooms from a config entry."""
     email = entry.data[CONF_EMAIL]
     user_data = UserData.from_dict(entry.data[CONF_USER_DATA])
+    scan_interval = entry.options.get(CONF_SCAN_INTERVAL_MINUTES, DEFAULT_SCAN_INTERVAL_MINUTES)
 
-    coordinator = RoborockRoomsCoordinator(hass, email, user_data, _cache_path(hass, entry))
+    coordinator = RoborockRoomsCoordinator(
+        hass, email, user_data, _cache_path(hass, entry), scan_interval
+    )
     try:
         await coordinator.async_config_entry_first_refresh()
     except RoborockException as err:
@@ -65,12 +71,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {}).setdefault(DATA_COORDINATORS, {})[entry.entry_id] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
 
     async def async_clean_rooms(call: ServiceCall) -> None:
-        duid = call.data[ATTR_DUID]
-        segments = call.data[ATTR_SEGMENTS]
-        repeat = call.data[ATTR_REPEAT]
-        await _async_clean_rooms(hass, duid, segments, repeat)
+        device_entry = dr.async_get(hass).async_get(call.data[ATTR_DEVICE_ID])
+        if device_entry is None:
+            raise ServiceValidationError("Unknown device")
+        duid = next((ident[1] for ident in device_entry.identifiers if ident[0] == DOMAIN), None)
+        if duid is None:
+            raise ServiceValidationError("Selected device is not a Roborock Rooms vacuum")
+        await _async_clean_rooms(hass, duid, call.data[ATTR_SEGMENTS], call.data[ATTR_REPEAT])
 
     if not hass.services.has_service(DOMAIN, SERVICE_CLEAN_ROOMS):
         hass.services.async_register(
@@ -80,19 +90,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def _async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         coordinators = hass.data.get(DOMAIN, {}).get(DATA_COORDINATORS, {})
-        coordinators.pop(entry.entry_id, None)
+        coordinator = coordinators.pop(entry.entry_id, None)
+        if coordinator is not None:
+            coordinator.async_shutdown_issues()
         if not coordinators and hass.services.has_service(DOMAIN, SERVICE_CLEAN_ROOMS):
             hass.services.async_remove(DOMAIN, SERVICE_CLEAN_ROOMS)
     return unload_ok
 
 
 def _find_coordinator_for_duid(hass: HomeAssistant, duid: str) -> RoborockRoomsCoordinator | None:
-    for entry_id, coordinator in hass.data.get(DOMAIN, {}).get(DATA_COORDINATORS, {}).items():
+    for coordinator in hass.data.get(DOMAIN, {}).get(DATA_COORDINATORS, {}).values():
         if duid in coordinator.data:
             return coordinator
     return None

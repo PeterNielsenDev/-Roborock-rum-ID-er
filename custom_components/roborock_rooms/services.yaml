@@ -2,15 +2,16 @@ clean_rooms:
   name: Clean rooms
   description: Start a segment clean of one or more rooms on a Roborock vacuum.
   fields:
-    duid:
-      name: Device ID
-      description: The vacuum's device id (duid), as shown on any of its room sensor attributes.
+    device_id:
+      name: Device
+      description: The Roborock vacuum to clean.
       required: true
       selector:
-        text:
+        device:
+          integration: roborock_rooms
     segments:
       name: Segments
-      description: List of room segment ids to clean, e.g. [2, 5].
+      description: List of room segment ids to clean, e.g. [2, 5]. See the room sensors' state/attributes.
       required: true
       selector:
         object:

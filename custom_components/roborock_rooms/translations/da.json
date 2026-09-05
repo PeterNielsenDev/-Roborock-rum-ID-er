@@ -15,13 +15,45 @@
         "data": {
           "code": "Kode"
         }
+      },
+      "reauth_confirm": {
+        "title": "Log ind igen på Roborock Rooms",
+        "description": "Dit Roborock-login for {email} er udløbet eller blev afvist. Indtast din adgangskode, eller lad den stå tom for i stedet at få tilsendt en engangskode på email.",
+        "data": {
+          "password": "Adgangskode (valgfri)"
+        }
+      },
+      "reauth_code": {
+        "title": "Indtast login-kode",
+        "description": "Indtast koden, der er sendt til {email}.",
+        "data": {
+          "code": "Kode"
+        }
       }
     },
     "error": {
       "invalid_auth": "Login mislykkedes. Tjek email/adgangskode eller koden, og prøv igen."
     },
     "abort": {
-      "already_configured": "Denne Roborock-konto er allerede konfigureret."
+      "already_configured": "Denne Roborock-konto er allerede konfigureret.",
+      "reauth_successful": "Login blev fornyet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Roborock Rooms - indstillinger",
+        "description": "Hvor ofte rum-/segment-listen skal opdateres fra kontoen.",
+        "data": {
+          "scan_interval_minutes": "Opdateringsinterval (minutter)"
+        }
+      }
+    }
+  },
+  "issues": {
+    "discovery_failed": {
+      "title": "Kunne ikke hente rum for {device}",
+      "description": "Rum-/segment-opdagelse er fejlet gentagne gange for {device}: {error}. Tjek at støvsugeren er online og ikke er i gang med at gøre rent."
     }
   }
 }

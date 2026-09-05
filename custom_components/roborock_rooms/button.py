@@ -1,7 +1,8 @@
 """Button platform for Roborock Rooms.
 
-Creates one "Clean" button per room, so a single room can be cleaned from a
-dashboard without remembering its segment id.
+Creates one "Clean" button per room, plus one "Clean all rooms" button per
+vacuum, so rooms can be cleaned from a dashboard without remembering
+segment ids.
 """
 
 from __future__ import annotations
@@ -14,29 +15,33 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import _async_clean_rooms
 from .const import DATA_COORDINATORS, DOMAIN
 from .coordinator import RoborockRoomsCoordinator
-from .entity import RoborockRoomEntity
+from .entity import RoborockDeviceEntity, RoborockRoomEntity
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator: RoborockRoomsCoordinator = hass.data[DOMAIN][DATA_COORDINATORS][entry.entry_id]
-    known: set[tuple[str, int]] = set()
+    known_devices: set[str] = set()
+    known_rooms: set[tuple[str, int]] = set()
 
     @callback
-    def _add_new_rooms() -> None:
+    def _add_new_entities() -> None:
         new_entities = []
         for duid, device in coordinator.data.items():
+            if duid not in known_devices:
+                known_devices.add(duid)
+                new_entities.append(RoborockCleanAllButton(coordinator, duid))
             for room in device.rooms:
                 key = (duid, room.segment_id)
-                if key not in known:
-                    known.add(key)
+                if key not in known_rooms:
+                    known_rooms.add(key)
                     new_entities.append(RoborockRoomCleanButton(coordinator, duid, room.segment_id))
         if new_entities:
             async_add_entities(new_entities)
 
-    _add_new_rooms()
-    entry.async_on_unload(coordinator.async_add_listener(_add_new_rooms))
+    _add_new_entities()
+    entry.async_on_unload(coordinator.async_add_listener(_add_new_entities))
 
 
 class RoborockRoomCleanButton(RoborockRoomEntity, ButtonEntity):
@@ -55,3 +60,26 @@ class RoborockRoomCleanButton(RoborockRoomEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         await _async_clean_rooms(self.hass, self._duid, [self._segment_id], repeat=1)
+
+
+class RoborockCleanAllButton(RoborockDeviceEntity, ButtonEntity):
+    """Starts a clean of every currently known room on the device's map."""
+
+    _attr_icon = "mdi:broom"
+    _attr_name = "Clean all rooms"
+
+    def __init__(self, coordinator: RoborockRoomsCoordinator, duid: str) -> None:
+        super().__init__(coordinator, duid)
+        self._attr_unique_id = f"{duid}_clean_all"
+
+    @property
+    def available(self) -> bool:
+        device = self._device
+        return super().available and bool(device and device.rooms)
+
+    async def async_press(self) -> None:
+        device = self._device
+        if device is None or not device.rooms:
+            return
+        segments = [room.segment_id for room in device.rooms]
+        await _async_clean_rooms(self.hass, self._duid, segments, repeat=1)
