@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect your Roborock account",
+        "description": "Enter your Roborock account email. Leave the password empty to receive a one-time login code by email instead.",
+        "data": {
+          "email": "Email",
+          "password": "Password (optional)"
+        }
+      },
+      "code": {
+        "title": "Enter login code",
+        "description": "Enter the one-time code emailed to {email}.",
+        "data": {
+          "code": "Code"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Login failed. Check the email/password or code and try again."
+    },
+    "abort": {
+      "already_configured": "This Roborock account is already configured."
+    }
+  }
+}

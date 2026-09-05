@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Forbind din Roborock-konto",
+        "description": "Indtast emailadressen til din Roborock-konto. Lad adgangskoden stå tom for i stedet at få tilsendt en engangskode på email.",
+        "data": {
+          "email": "Email",
+          "password": "Adgangskode (valgfri)"
+        }
+      },
+      "code": {
+        "title": "Indtast login-kode",
+        "description": "Indtast koden, der er sendt til {email}.",
+        "data": {
+          "code": "Kode"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Login mislykkedes. Tjek email/adgangskode eller koden, og prøv igen."
+    },
+    "abort": {
+      "already_configured": "Denne Roborock-konto er allerede konfigureret."
+    }
+  }
+}

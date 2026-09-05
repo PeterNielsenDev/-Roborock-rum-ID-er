@@ -1,0 +1,12 @@
+{
+  "domain": "roborock_rooms",
+  "name": "Roborock Rooms",
+  "codeowners": ["@PeterNielsenDev"],
+  "config_flow": true,
+  "documentation": "https://github.com/PeterNielsenDev/-Roborock-rum-ID-er",
+  "issue_tracker": "https://github.com/PeterNielsenDev/-Roborock-rum-ID-er/issues",
+  "iot_class": "cloud_polling",
+  "integration_type": "hub",
+  "requirements": ["python-roborock==7.2.3"],
+  "version": "0.1.0"
+}
