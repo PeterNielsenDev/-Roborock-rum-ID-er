@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2
+
+- Rettet fejlende CI-validering: manifest-nøgler sorteret korrekt til hassfest,
+  repo-beskrivelse og topics tilføjet, og et brand-ikon oprettet under
+  `custom_components/roborock_rooms/brand/` (krævet af HACS). Ingen
+  funktionelle ændringer.
+
 ## 0.2.1
 
 - Rettet: cache-filen for konto-data blev læst og skrevet synkront direkte i
