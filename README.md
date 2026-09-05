@@ -59,11 +59,4 @@ data:
   (ca. 5 opslag/time) og caches derfor lokalt; selve rum-/segment-data hentes altid
   live fra støvsugeren, så nye eller omdøbte rum dukker op med det samme.
 
-## Baggrund
-
-Denne integration er en videreudvikling af et lille standalone-værktøj (Docker + FastAPI),
-der blev brugt til manuelt at slå rum-segment-ID'er op til brug i `vacuum.send_command`.
-Denne udgave gør det samme direkte som Home Assistant-entities og en service, så ID'erne
-ikke skal kopieres manuelt ind i automatiseringer.
-
 Bygget på [python-roborock](https://github.com/python-roborock/python-roborock).
