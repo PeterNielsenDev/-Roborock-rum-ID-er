@@ -33,6 +33,10 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                     }
                     for room in device.rooms
                 ],
+                "routines": [
+                    {"routine_id": routine.routine_id, "name": routine.name}
+                    for routine in device.routines
+                ],
             }
             for duid, device in coordinator.data.items()
         },

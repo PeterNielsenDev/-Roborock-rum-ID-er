@@ -12,6 +12,9 @@ For hver Roborock-støvsuger på kontoen oprettes:
 - **En "Clean all rooms"-knap** pr. støvsuger, der rengør alle kendte rum på kortet.
 - En service, **`roborock_rooms.clean_rooms`**, til at rengøre flere rum på én gang – med en
   device-vælger, så du slipper for selv at slå enhedens ID op.
+- **En knap pr. rutine** ("routine"/scene) defineret på kontoen i Roborock-appen, der
+  udløser rutinen direkte fra Home Assistant.
+- En service, **`roborock_rooms.run_routine`**, til at udløse en rutine ud fra dens ID.
 
 ## Installation
 
@@ -54,6 +57,19 @@ data:
 
 Segment-ID'erne kan aflæses direkte fra rum-sensorernes state og attributter i
 **Udviklerværktøjer → Tilstande**.
+
+## Brug af `run_routine`-servicen
+
+```yaml
+service: roborock_rooms.run_routine
+data:
+  device_id: "abc123..."   # vælges i en dropdown i UI'et - din Roborock-støvsuger
+  routine_id: 12345         # rutinens ID, se rutine-knappernes unique_id eller diagnostics
+```
+
+Rutiner ("routines"/scenes) er dem, du selv har oprettet under **Rutiner** i Roborock-appen.
+De hentes automatisk sammen med rum-listen og vises som en knap pr. rutine – tryk på knappen
+for at udløse den, eller brug servicen ovenfor fra en automatisering.
 
 ## Indstillinger
 

@@ -32,6 +32,14 @@ class RoborockRoom:
 
 
 @dataclass
+class RoborockRoutine:
+    """A single Roborock "routine" (scene) that can be triggered on demand."""
+
+    routine_id: int
+    name: str
+
+
+@dataclass
 class RoborockDeviceRooms:
     """Room data for a single vacuum on the account."""
 
@@ -39,6 +47,7 @@ class RoborockDeviceRooms:
     name: str
     error: str | None = None
     rooms: list[RoborockRoom] = field(default_factory=list)
+    routines: list[RoborockRoutine] = field(default_factory=list)
 
 
 class RoborockRoomsCoordinator(DataUpdateCoordinator[dict[str, RoborockDeviceRooms]]):
@@ -124,6 +133,15 @@ class RoborockRoomsCoordinator(DataUpdateCoordinator[dict[str, RoborockDeviceRoo
                             )
                         )
                 self._handle_device_result(entry)
+
+                try:
+                    scenes = await device.v1_properties.routines.get_routines()
+                except RoborockException as err:
+                    _LOGGER.debug("Failed to fetch routines for %s: %s", device.duid, err)
+                else:
+                    entry.routines = [
+                        RoborockRoutine(routine_id=scene.id, name=scene.name) for scene in scenes
+                    ]
         except RoborockInvalidCredentials as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except RoborockException as err:

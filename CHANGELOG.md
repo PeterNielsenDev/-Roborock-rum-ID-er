@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+- Rutiner ("routines"/scenes) fra Roborock-kontoen hentes nu med og vises som en knap
+  pr. rutine, der udløser den direkte.
+- Ny service, `roborock_rooms.run_routine`, til at udløse en rutine ud fra dens ID.
+- Rettet: `roborock_rooms.clean_rooms`-servicen ville altid fejle med en `TypeError`,
+  fordi den oprettede sin cache med den gamle `SafeFileCache`-signatur fra før 0.2.1.
+
 ## 0.2.2
 
 - Rettet fejlende CI-validering: manifest-nøgler sorteret korrekt til hassfest,

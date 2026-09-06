@@ -3,7 +3,8 @@
 Exposes each room/segment on a Roborock vacuum's map as a sensor (its state
 is the segment id used by the cloud API) and a button to clean just that
 room, plus a `roborock_rooms.clean_rooms` service to clean an arbitrary set
-of rooms in one go.
+of rooms in one go. Also exposes each account-defined routine (scene) as a
+button, plus a `roborock_rooms.run_routine` service to trigger one by id.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from .cache import SafeFileCache
 from .const import (
     ATTR_DEVICE_ID,
     ATTR_REPEAT,
+    ATTR_ROUTINE_ID,
     ATTR_SEGMENTS,
     CONF_SCAN_INTERVAL_MINUTES,
     CONF_USER_DATA,
@@ -34,6 +36,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DOMAIN,
     SERVICE_CLEAN_ROOMS,
+    SERVICE_RUN_ROUTINE,
 )
 from .coordinator import RoborockRoomsCoordinator
 
@@ -46,6 +49,13 @@ CLEAN_ROOMS_SCHEMA = vol.Schema(
         vol.Required(ATTR_DEVICE_ID): cv.string,
         vol.Required(ATTR_SEGMENTS): vol.All(cv.ensure_list, [vol.Coerce(int)]),
         vol.Optional(ATTR_REPEAT, default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=3)),
+    }
+)
+
+RUN_ROUTINE_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_DEVICE_ID): cv.string,
+        vol.Required(ATTR_ROUTINE_ID): vol.Coerce(int),
     }
 )
 
@@ -87,6 +97,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             DOMAIN, SERVICE_CLEAN_ROOMS, async_clean_rooms, schema=CLEAN_ROOMS_SCHEMA
         )
 
+    async def async_run_routine(call: ServiceCall) -> None:
+        device_entry = dr.async_get(hass).async_get(call.data[ATTR_DEVICE_ID])
+        if device_entry is None:
+            raise ServiceValidationError("Unknown device")
+        duid = next((ident[1] for ident in device_entry.identifiers if ident[0] == DOMAIN), None)
+        if duid is None:
+            raise ServiceValidationError("Selected device is not a Roborock Rooms vacuum")
+        await _async_execute_routine(hass, duid, call.data[ATTR_ROUTINE_ID])
+
+    if not hass.services.has_service(DOMAIN, SERVICE_RUN_ROUTINE):
+        hass.services.async_register(
+            DOMAIN, SERVICE_RUN_ROUTINE, async_run_routine, schema=RUN_ROUTINE_SCHEMA
+        )
+
     return True
 
 
@@ -102,8 +126,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator = coordinators.pop(entry.entry_id, None)
         if coordinator is not None:
             coordinator.async_shutdown_issues()
-        if not coordinators and hass.services.has_service(DOMAIN, SERVICE_CLEAN_ROOMS):
-            hass.services.async_remove(DOMAIN, SERVICE_CLEAN_ROOMS)
+        if not coordinators:
+            if hass.services.has_service(DOMAIN, SERVICE_CLEAN_ROOMS):
+                hass.services.async_remove(DOMAIN, SERVICE_CLEAN_ROOMS)
+            if hass.services.has_service(DOMAIN, SERVICE_RUN_ROUTINE):
+                hass.services.async_remove(DOMAIN, SERVICE_RUN_ROUTINE)
     return unload_ok
 
 
@@ -127,7 +154,7 @@ async def _async_clean_rooms(hass: HomeAssistant, duid: str, segments: list[int]
     )
     entry = hass.config_entries.async_get_entry(entry_id)
     assert entry is not None
-    cache = SafeFileCache(_cache_path(hass, entry))
+    cache = SafeFileCache(hass, _cache_path(hass, entry))
     user_params = UserParams(username=coordinator.email, user_data=coordinator.user_data)
 
     manager = None
@@ -141,6 +168,36 @@ async def _async_clean_rooms(hass: HomeAssistant, duid: str, segments: list[int]
             RoborockCommand.APP_SEGMENT_CLEAN,
             params=[{"segments": segments, "repeat": repeat}],
         )
+    finally:
+        if manager is not None:
+            await manager.close()
+        await cache.flush()
+
+
+async def _async_execute_routine(hass: HomeAssistant, duid: str, routine_id: int) -> None:
+    """Open a short-lived connection to the account and trigger a routine."""
+    coordinator = _find_coordinator_for_duid(hass, duid)
+    if coordinator is None:
+        raise RoborockException(f"Unknown Roborock device duid: {duid}")
+
+    entry_id = next(
+        entry_id
+        for entry_id, coord in hass.data[DOMAIN][DATA_COORDINATORS].items()
+        if coord is coordinator
+    )
+    entry = hass.config_entries.async_get_entry(entry_id)
+    assert entry is not None
+    cache = SafeFileCache(hass, _cache_path(hass, entry))
+    user_params = UserParams(username=coordinator.email, user_data=coordinator.user_data)
+
+    manager = None
+    try:
+        manager = await create_device_manager(user_params, cache=cache)
+        devices = await manager.get_devices()
+        device = next((d for d in devices if d.duid == duid), None)
+        if device is None or device.v1_properties is None:
+            raise RoborockException(f"Device {duid} not found or does not support routines")
+        await device.v1_properties.routines.execute_routine(routine_id)
     finally:
         if manager is not None:
             await manager.close()

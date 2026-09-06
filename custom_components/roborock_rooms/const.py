@@ -17,3 +17,6 @@ SERVICE_CLEAN_ROOMS = "clean_rooms"
 ATTR_DEVICE_ID = "device_id"
 ATTR_SEGMENTS = "segments"
 ATTR_REPEAT = "repeat"
+
+SERVICE_RUN_ROUTINE = "run_routine"
+ATTR_ROUTINE_ID = "routine_id"

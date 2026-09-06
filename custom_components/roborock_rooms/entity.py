@@ -58,3 +58,27 @@ class RoborockRoomEntity(RoborockDeviceEntity):
     @property
     def available(self) -> bool:
         return super().available and self._room is not None
+
+
+class RoborockRoutineEntity(RoborockDeviceEntity):
+    """Base entity representing a single routine (scene) for a vacuum."""
+
+    def __init__(
+        self,
+        coordinator: RoborockRoomsCoordinator,
+        duid: str,
+        routine_id: int,
+    ) -> None:
+        super().__init__(coordinator, duid)
+        self._routine_id = routine_id
+
+    @property
+    def _routine(self):
+        device = self._device
+        if device is None:
+            return None
+        return next((r for r in device.routines if r.routine_id == self._routine_id), None)
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._routine is not None

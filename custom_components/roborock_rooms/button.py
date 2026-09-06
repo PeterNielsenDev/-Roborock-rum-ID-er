@@ -12,10 +12,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import _async_clean_rooms
+from . import _async_clean_rooms, _async_execute_routine
 from .const import DATA_COORDINATORS, DOMAIN
 from .coordinator import RoborockRoomsCoordinator
-from .entity import RoborockDeviceEntity, RoborockRoomEntity
+from .entity import RoborockDeviceEntity, RoborockRoomEntity, RoborockRoutineEntity
 
 
 async def async_setup_entry(
@@ -24,6 +24,7 @@ async def async_setup_entry(
     coordinator: RoborockRoomsCoordinator = hass.data[DOMAIN][DATA_COORDINATORS][entry.entry_id]
     known_devices: set[str] = set()
     known_rooms: set[tuple[str, int]] = set()
+    known_routines: set[tuple[str, int]] = set()
 
     @callback
     def _add_new_entities() -> None:
@@ -37,6 +38,11 @@ async def async_setup_entry(
                 if key not in known_rooms:
                     known_rooms.add(key)
                     new_entities.append(RoborockRoomCleanButton(coordinator, duid, room.segment_id))
+            for routine in device.routines:
+                key = (duid, routine.routine_id)
+                if key not in known_routines:
+                    known_routines.add(key)
+                    new_entities.append(RoborockRoutineButton(coordinator, duid, routine.routine_id))
         if new_entities:
             async_add_entities(new_entities)
 
@@ -83,3 +89,21 @@ class RoborockCleanAllButton(RoborockDeviceEntity, ButtonEntity):
             return
         segments = [room.segment_id for room in device.rooms]
         await _async_clean_rooms(self.hass, self._duid, segments, repeat=1)
+
+
+class RoborockRoutineButton(RoborockRoutineEntity, ButtonEntity):
+    """Triggers a Roborock routine (scene)."""
+
+    _attr_icon = "mdi:play-circle"
+
+    def __init__(self, coordinator: RoborockRoomsCoordinator, duid: str, routine_id: int) -> None:
+        super().__init__(coordinator, duid, routine_id)
+        self._attr_unique_id = f"{duid}_routine_{routine_id}"
+
+    @property
+    def name(self) -> str | None:
+        routine = self._routine
+        return routine.name if routine else None
+
+    async def async_press(self) -> None:
+        await _async_execute_routine(self.hass, self._duid, self._routine_id)
