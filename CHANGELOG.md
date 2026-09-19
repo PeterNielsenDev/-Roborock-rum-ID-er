@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+- Pænere opsætning: rummenes indstillinger (suction, water flow, mop route, repeat) ligger
+  nu på en lille enhed pr. rum under støvsugeren i stedet for én lang liste på støvsugeren.
+  Entity-navne er blevet kortere ("Suction" osv.); eksisterende entity-id'er ændres ikke.
+- Enhedsvælgeren i `clean_rooms` og `run_routine` viser kun støvsugere, ikke rum-enhederne.
+
 ## 0.4.0
 
 - Individuelle rengøringsindstillinger pr. rum: hvert rum får nu valg for sugekraft,

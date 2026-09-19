@@ -13,8 +13,8 @@ For hver Roborock-støvsuger på kontoen oprettes:
 - En service, **`roborock_rooms.clean_rooms`**, til at rengøre flere rum på én gang – med en
   device-vælger, så du slipper for selv at slå enhedens ID op.
 - **Indstillinger pr. rum**: sugekraft, vandmængde, moppe-rute og antal gentagelser som
-  `select`-/`number`-entities under enhedens "Konfiguration". Rummets knap bruger dem, når
-  den rengør.
+  `select`-/`number`-entities, samlet på en lille "rum"-enhed pr. rum under støvsugeren.
+  Rummets knap bruger dem, når den rengør.
 - **En knap pr. rutine** ("routine"/scene) defineret på kontoen i Roborock-appen, der
   udløser rutinen direkte fra Home Assistant.
 - En service, **`roborock_rooms.run_routine`**, til at udløse en rutine ud fra dens ID.
@@ -64,10 +64,20 @@ Segment-ID'erne kan aflæses direkte fra rum-sensorernes state og attributter i
 
 ## Indstillinger pr. rum
 
-Hvert rum får op til fire konfigurations-entities: **suction**, **water flow**, **mop route**
-og **repeat**. Hvilke valg der findes, afhænger af din model (fx har ikke alle en moppe-rute).
-Værdien **default** betyder, at støvsugerens egen indstilling ikke ændres for det rum.
-Indstillingerne huskes efter en genstart af Home Assistant.
+Hvert rum får sin egen lille enhed (fx "Roborock Køkken") under støvsugeren – klik på
+rummet på støvsugerens enhedsside. Her ligger op til fire indstillinger:
+
+| Indstilling | Betydning |
+| --- | --- |
+| **Suction** | Sugekraft (fx quiet, balanced, turbo, max). |
+| **Water flow** | Hvor meget vand moppen afgiver (off, low, medium, high …). |
+| **Mop route** | Hvordan støvsugeren kører, når den mopper: **standard** = normal frem-og-tilbage-bane, **deep** / **deep_plus** = langsommere med mere overlap (grundigere), **fast** = hurtigere med mindre overlap. |
+| **Repeat** | Hvor mange gange rummet rengøres (1-3). |
+
+Hvilke valg der findes, afhænger af din model – fx har ikke alle en moppe-rute, og de
+rum-enheder uden valg får ikke den indstilling. Værdien **default** betyder, at støvsugerens
+egen indstilling ikke ændres for det rum. Indstillingerne huskes efter en genstart af Home
+Assistant.
 
 En støvsuger kan kun bruge **én** indstilling ad gangen. Rengør du flere rum med
 forskellige indstillinger (via "Clean all rooms" eller `clean_rooms`), grupperer

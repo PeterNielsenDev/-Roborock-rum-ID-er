@@ -2,11 +2,29 @@
 
 from __future__ import annotations
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, VACUUM_MODEL
 from .coordinator import RoborockRoomsCoordinator
+
+
+def async_ensure_vacuum_devices(
+    hass: HomeAssistant, entry: ConfigEntry, coordinator: RoborockRoomsCoordinator
+) -> None:
+    """Register the vacuum devices, so room devices can point at them via `via_device`."""
+    registry = dr.async_get(hass)
+    for duid, device in coordinator.data.items():
+        registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={(DOMAIN, duid)},
+            name=device.name,
+            manufacturer="Roborock",
+            model=VACUUM_MODEL,
+        )
 
 
 class RoborockDeviceEntity(CoordinatorEntity[RoborockRoomsCoordinator]):
@@ -33,6 +51,7 @@ class RoborockDeviceEntity(CoordinatorEntity[RoborockRoomsCoordinator]):
             identifiers={(DOMAIN, self._duid)},
             name=device.name if device else self._duid,
             manufacturer="Roborock",
+            model=VACUUM_MODEL,
         )
 
 
@@ -58,6 +77,28 @@ class RoborockRoomEntity(RoborockDeviceEntity):
     @property
     def available(self) -> bool:
         return super().available and self._room is not None
+
+
+class RoborockRoomSettingEntity(RoborockRoomEntity):
+    """A per-room cleaning setting, shown on its own "room" device under the vacuum.
+
+    Grouping a room's settings on a device of their own keeps the vacuum's page
+    short: it just lists its rooms, and each room shows only its own settings.
+    """
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        room = self._room
+        device = self._device
+        vacuum_name = device.name if device else self._duid
+        room_name = room.name if room else f"Room {self._segment_id}"
+        return DeviceInfo(
+            identifiers={(DOMAIN, f"{self._duid}_{self._segment_id}")},
+            name=f"{vacuum_name} {room_name}",
+            manufacturer="Roborock",
+            model="Room",
+            via_device=(DOMAIN, self._duid),
+        )
 
 
 class RoborockRoutineEntity(RoborockDeviceEntity):

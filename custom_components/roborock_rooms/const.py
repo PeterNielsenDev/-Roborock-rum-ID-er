@@ -2,6 +2,9 @@
 
 DOMAIN = "roborock_rooms"
 
+# Device model of the vacuum devices; room devices use "Room". services.yaml filters on this.
+VACUUM_MODEL = "Vacuum"
+
 CONF_USER_DATA = "user_data"
 CONF_SCAN_INTERVAL_MINUTES = "scan_interval_minutes"
 

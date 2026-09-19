@@ -17,14 +17,14 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from . import _room_settings
 from .const import DATA_COORDINATORS, DOMAIN
 from .coordinator import RoborockRoomsCoordinator
-from .entity import RoborockRoomEntity
+from .entity import RoborockRoomSettingEntity, async_ensure_vacuum_devices
 from .settings import DEFAULT_OPTION
 
-# setting key -> (name suffix, RoborockDeviceRooms attribute holding the options, icon)
+# setting key -> (entity name, RoborockDeviceRooms attribute holding the options, icon)
 SETTINGS: dict[str, tuple[str, str, str]] = {
-    "fan_power": ("suction", "fan_options", "mdi:fan"),
-    "water_box_mode": ("water flow", "water_options", "mdi:water"),
-    "mop_mode": ("mop route", "route_options", "mdi:map-marker-path"),
+    "fan_power": ("Suction", "fan_options", "mdi:fan"),
+    "water_box_mode": ("Water flow", "water_options", "mdi:water"),
+    "mop_mode": ("Mop route", "route_options", "mdi:map-marker-path"),
 }
 
 
@@ -36,6 +36,7 @@ async def async_setup_entry(
 
     @callback
     def _add_new_entities() -> None:
+        async_ensure_vacuum_devices(hass, entry, coordinator)
         new_entities = []
         for duid, device in coordinator.data.items():
             for room in device.rooms:
@@ -56,7 +57,7 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(_add_new_entities))
 
 
-class RoborockRoomSettingSelect(RoborockRoomEntity, SelectEntity, RestoreEntity):
+class RoborockRoomSettingSelect(RoborockRoomSettingEntity, SelectEntity, RestoreEntity):
     """Chooses one cleaning setting for a single room."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -66,18 +67,13 @@ class RoborockRoomSettingSelect(RoborockRoomEntity, SelectEntity, RestoreEntity)
     ) -> None:
         super().__init__(coordinator, duid, segment_id)
         self._key = key
-        self._suffix, self._options_attr, self._attr_icon = SETTINGS[key]
+        self._attr_name, self._options_attr, self._attr_icon = SETTINGS[key]
         self._attr_unique_id = f"{duid}_{segment_id}_{key}"
 
     @property
     def _choices(self) -> dict[str, int]:
         device = self._device
         return getattr(device, self._options_attr) if device else {}
-
-    @property
-    def name(self) -> str | None:
-        room = self._room
-        return f"{room.name} {self._suffix}" if room else None
 
     @property
     def options(self) -> list[str]:

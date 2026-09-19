@@ -9,6 +9,7 @@ clean_rooms:
       selector:
         device:
           integration: roborock_rooms
+          model: Vacuum
     segments:
       name: Segments
       description: List of room segment ids to clean, e.g. [2, 5]. See the room sensors' state/attributes.
@@ -45,6 +46,7 @@ run_routine:
       selector:
         device:
           integration: roborock_rooms
+          model: Vacuum
     routine_id:
       name: Routine
       description: The routine id to run. See the routine buttons' attributes, or the integration diagnostics.

@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import _room_settings
 from .const import DATA_COORDINATORS, DOMAIN
 from .coordinator import RoborockRoomsCoordinator
-from .entity import RoborockRoomEntity
+from .entity import RoborockRoomSettingEntity, async_ensure_vacuum_devices
 from .settings import MAX_REPEAT, MIN_REPEAT
 
 
@@ -23,6 +23,7 @@ async def async_setup_entry(
 
     @callback
     def _add_new_rooms() -> None:
+        async_ensure_vacuum_devices(hass, entry, coordinator)
         new_entities = []
         for duid, device in coordinator.data.items():
             for room in device.rooms:
@@ -37,7 +38,7 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(_add_new_rooms))
 
 
-class RoborockRoomRepeatNumber(RoborockRoomEntity, RestoreNumber):
+class RoborockRoomRepeatNumber(RoborockRoomSettingEntity, RestoreNumber):
     """Number of passes (1-3) used when cleaning a single room."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -46,15 +47,11 @@ class RoborockRoomRepeatNumber(RoborockRoomEntity, RestoreNumber):
     _attr_native_min_value = MIN_REPEAT
     _attr_native_max_value = MAX_REPEAT
     _attr_native_step = 1
+    _attr_name = "Repeat"
 
     def __init__(self, coordinator: RoborockRoomsCoordinator, duid: str, segment_id: int) -> None:
         super().__init__(coordinator, duid, segment_id)
         self._attr_unique_id = f"{duid}_{segment_id}_repeat"
-
-    @property
-    def name(self) -> str | None:
-        room = self._room
-        return f"{room.name} repeat" if room else None
 
     @property
     def native_value(self) -> float:
