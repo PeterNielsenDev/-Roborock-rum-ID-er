@@ -2,7 +2,8 @@
 
 Creates one "Clean" button per room, plus one "Clean all rooms" button per
 vacuum, so rooms can be cleaned from a dashboard without remembering
-segment ids.
+segment ids. Each room is cleaned with its own suction/water/mop/repeat
+settings (see the select and number platforms).
 """
 
 from __future__ import annotations
@@ -65,7 +66,7 @@ class RoborockRoomCleanButton(RoborockRoomEntity, ButtonEntity):
         return f"Clean {room.name}" if room else None
 
     async def async_press(self) -> None:
-        await _async_clean_rooms(self.hass, self._duid, [self._segment_id], repeat=1)
+        await _async_clean_rooms(self.hass, self._duid, [self._segment_id])
 
 
 class RoborockCleanAllButton(RoborockDeviceEntity, ButtonEntity):
@@ -88,7 +89,7 @@ class RoborockCleanAllButton(RoborockDeviceEntity, ButtonEntity):
         if device is None or not device.rooms:
             return
         segments = [room.segment_id for room in device.rooms]
-        await _async_clean_rooms(self.hass, self._duid, segments, repeat=1)
+        await _async_clean_rooms(self.hass, self._duid, segments)
 
 
 class RoborockRoutineButton(RoborockRoutineEntity, ButtonEntity):

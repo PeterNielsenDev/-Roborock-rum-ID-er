@@ -12,6 +12,9 @@ For hver Roborock-støvsuger på kontoen oprettes:
 - **En "Clean all rooms"-knap** pr. støvsuger, der rengør alle kendte rum på kortet.
 - En service, **`roborock_rooms.clean_rooms`**, til at rengøre flere rum på én gang – med en
   device-vælger, så du slipper for selv at slå enhedens ID op.
+- **Indstillinger pr. rum**: sugekraft, vandmængde, moppe-rute og antal gentagelser som
+  `select`-/`number`-entities under enhedens "Konfiguration". Rummets knap bruger dem, når
+  den rengør.
 - **En knap pr. rutine** ("routine"/scene) defineret på kontoen i Roborock-appen, der
   udløser rutinen direkte fra Home Assistant.
 - En service, **`roborock_rooms.run_routine`**, til at udløse en rutine ud fra dens ID.
@@ -52,11 +55,31 @@ service: roborock_rooms.clean_rooms
 data:
   device_id: "abc123..."   # vælges i en dropdown i UI'et - din Roborock-støvsuger
   segments: [2, 5]         # segment-ID'erne for de rum, der skal rengøres
-  repeat: 1                # valgfri, 1-3
+  repeat: 1                # valgfri, 1-3 - udelades det, bruges hvert rums eget "repeat"
+  use_room_settings: true  # valgfri (standard true) - false = brug støvsugerens nuværende indstillinger
 ```
 
 Segment-ID'erne kan aflæses direkte fra rum-sensorernes state og attributter i
 **Udviklerværktøjer → Tilstande**.
+
+## Indstillinger pr. rum
+
+Hvert rum får op til fire konfigurations-entities: **suction**, **water flow**, **mop route**
+og **repeat**. Hvilke valg der findes, afhænger af din model (fx har ikke alle en moppe-rute).
+Værdien **default** betyder, at støvsugerens egen indstilling ikke ændres for det rum.
+Indstillingerne huskes efter en genstart af Home Assistant.
+
+En støvsuger kan kun bruge **én** indstilling ad gangen. Rengør du flere rum med
+forskellige indstillinger (via "Clean all rooms" eller `clean_rooms`), grupperer
+integrationen derfor rummene efter identiske indstillinger og rengør grupperne efter
+hinanden: næste gruppe starter først, når støvsugeren er færdig og igen står på
+dock'en/er inaktiv. Det sker i baggrunden, så kaldet vender straks tilbage. Fejler
+støvsugeren undervejs, eller starter den ikke, droppes resten af køen (se loggen).
+Starter du en anden rengøring midt i en kø, afbryder den den igangværende.
+
+Har din model en indbygget "custom"-tilstand med indstillinger pr. rum i Roborock-appen,
+kan du i stedet vælge **custom** som sugekraft/vandmængde – så bruger støvsugeren selv
+appens rum-indstillinger.
 
 ## Brug af `run_routine`-servicen
 

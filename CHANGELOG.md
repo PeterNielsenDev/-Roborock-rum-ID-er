@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0
+
+- Individuelle rengøringsindstillinger pr. rum: hvert rum får nu valg for sugekraft,
+  vandmængde og moppe-rute (kun dem, din model understøtter) samt antal gentagelser (1-3).
+  Vælg "default" for at lade støvsugerens egen indstilling stå uændret.
+- Rum-knapperne, "Clean all rooms" og `clean_rooms`-servicen bruger de enkelte rums
+  indstillinger. Rum med forskellige indstillinger rengøres i grupper efter hinanden
+  (støvsugeren kan kun bruge én indstilling ad gangen); næste gruppe starter, når
+  støvsugeren er færdig og igen er på dock'en.
+- `clean_rooms` har fået feltet `use_room_settings`, og `repeat` er nu valgfri
+  (uden angivelse bruges hvert rums egen værdi).
+- Intern oprydning: fælles forbindelses-hjælper til rengøring og rutiner.
+
 ## 0.3.0
 
 - Rutiner ("routines"/scenes) fra Roborock-kontoen hentes nu med og vises som en knap

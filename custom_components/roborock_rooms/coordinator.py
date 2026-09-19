@@ -48,6 +48,10 @@ class RoborockDeviceRooms:
     error: str | None = None
     rooms: list[RoborockRoom] = field(default_factory=list)
     routines: list[RoborockRoutine] = field(default_factory=list)
+    # Option name -> code for the settings this particular model supports.
+    fan_options: dict[str, int] = field(default_factory=dict)
+    water_options: dict[str, int] = field(default_factory=dict)
+    route_options: dict[str, int] = field(default_factory=dict)
 
 
 class RoborockRoomsCoordinator(DataUpdateCoordinator[dict[str, RoborockDeviceRooms]]):
@@ -96,6 +100,16 @@ class RoborockRoomsCoordinator(DataUpdateCoordinator[dict[str, RoborockDeviceRoo
         elif self._failure_counts.pop(entry.duid, None):
             ir.async_delete_issue(self.hass, DOMAIN, issue_id)
 
+    @staticmethod
+    def _read_setting_options(entry: RoborockDeviceRooms, status) -> None:
+        """Record which suction/water/mop-route values this model supports."""
+        try:
+            entry.fan_options = {mode.value: mode.code for mode in status.fan_speed_options}
+            entry.water_options = {mode.value: mode.code for mode in status.water_mode_options}
+            entry.route_options = {route.display_name: route.code for route in status.mop_route_options}
+        except Exception:  # noqa: BLE001 - optional metadata must never break room discovery
+            _LOGGER.debug("Could not read cleaning setting options for %s", entry.duid, exc_info=True)
+
     async def _async_update_data(self) -> dict[str, RoborockDeviceRooms]:
         cache = SafeFileCache(self.hass, self._cache_path)
         user_params = UserParams(username=self.email, user_data=self.user_data)
@@ -133,6 +147,8 @@ class RoborockRoomsCoordinator(DataUpdateCoordinator[dict[str, RoborockDeviceRoo
                             )
                         )
                 self._handle_device_result(entry)
+
+                self._read_setting_options(entry, device.v1_properties.status)
 
                 try:
                     scenes = await device.v1_properties.routines.get_routines()

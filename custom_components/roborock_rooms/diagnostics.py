@@ -33,6 +33,11 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                     }
                     for room in device.rooms
                 ],
+                "setting_options": {
+                    "fan": device.fan_options,
+                    "water": device.water_options,
+                    "mop_route": device.route_options,
+                },
                 "routines": [
                     {"routine_id": routine.routine_id, "name": routine.name}
                     for routine in device.routines
