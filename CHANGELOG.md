@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.2
+
+- Rettet: `python-roborock` var låst til `==7.2.3`. Det nedgraderede biblioteket i Home
+  Assistant og fik den indbyggede Roborock-integration til at fejle med
+  `ImportError: cannot import name 'Q10RoborockPoint'`. Kravet er nu `>=7.2.3`, så
+  integrationen bruger den version, Home Assistant Core leveres med (7.12.0 i 2026.10.4).
+
 ## 0.4.1
 
 - Pænere opsætning: rummenes indstillinger (suction, water flow, mop route, repeat) ligger
