@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.3
+
+- Minimumskravet til `python-roborock` er hævet til `>=7.12.0` (den version, Home
+  Assistant Core 2026.10.0-2026.10.4 selv bruger). En ældre installeret 7.2.3 er nu
+  ikke god nok, så Home Assistant opgraderer den automatisk ved næste genstart, i
+  stedet for at risikere en nedgradering som i 0.4.2.
+- `hacs.json`: minimumskrav til Home Assistant sat til 2026.10.0, så HACS ikke
+  installerer integrationen på en ældre HA, hvor det nye krav ikke giver mening.
+
 ## 0.4.2
 
 - Rettet: `python-roborock` var låst til `==7.2.3`. Det nedgraderede biblioteket i Home
